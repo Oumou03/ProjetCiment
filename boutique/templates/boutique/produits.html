@@ -1,0 +1,175 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="fas fa-boxes me-2 text-primary"></i>Gestion des Produits
+            </h3>
+            <p class="text-muted small">Liste complète des produits en stock</p>
+        </div>
+        <button type="button" class="btn btn-primary shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#produitModal">
+            <i class="fas fa-plus-circle me-2"></i>Nouveau Produit
+        </button>
+    </div>
+
+    <!-- Affichage des messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Produit</th>
+                            <th>Prix d'Achat</th>
+                            <th>Prix de Vente</th>
+                            <th>Stock Actuel</th>
+                            <th>Seuil d'Alerte</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        {% for produit in produits %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">#{{ produit.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-box text-primary"></i>
+                                    </div>
+                                    <span class="fw-bold">{{ produit.nom }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-danger">{{ produit.prix_achat }} GNF</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-success">{{ produit.prix_vente }} GNF</span>
+                            </td>
+                            <td>
+                                {% if produit.stock_actuel <= 0 %}
+                                    <span class="badge bg-danger rounded-pill px-3 py-2">Rupture</span>
+                                {% elif produit.stock_actuel <= produit.seuil_alerte %}
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2">{{ produit.stock_actuel }} sacs</span>
+                                {% else %}
+                                    <span class="badge bg-success rounded-pill px-3 py-2">{{ produit.stock_actuel }} sacs</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark rounded-pill px-3 py-2">{{ produit.seuil_alerte }} sacs</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group shadow-sm">
+                                    <a href="{% url 'modifier_produit' produit.id %}" class="btn btn-sm btn-white border text-warning" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{% url 'supprimer_produit' produit.id %}" method="POST" class="d-inline" onsubmit="return confirm('Supprimer ce produit ?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-white border border-start-0 text-danger" title="Supprimer">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="opacity-25 mb-3">
+                                    <i class="fas fa-box-open fa-4x text-muted"></i>
+                                </div>
+                                <p class="text-muted fw-bold">Aucun produit enregistré</p>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#produitModal">
+                                    <i class="fas fa-plus-circle me-2"></i>Ajouter le premier produit
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white border-0 py-3 text-muted small">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-chart-line me-2"></i>Total: {{ produits|length }} produit(s)</span>
+                <span>
+                    <i class="fas fa-box me-2"></i>Stock total: 
+                    {% with total=0 %}
+                        {% for p in produits %}
+                            {% if p.stock_actuel > 0 %}
+                                {{ total|add:p.stock_actuel }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %} sacs
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'ajout de produit (UNE SEULE FOIS) -->
+<div class="modal fade" id="produitModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white p-4 border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2"></i>Nouveau Produit</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'liste_produits' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="bg-light p-3 rounded-4">
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Nom du produit</label>
+                            <input type="text" name="nom" class="form-control" required placeholder="Ex: Ciment Diamond">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Prix d'achat (GNF)</label>
+                            <input type="number" name="prix_achat" class="form-control" required value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Prix de vente (GNF)</label>
+                            <input type="number" name="prix_vente" class="form-control" required value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Stock initial</label>
+                            <input type="number" name="stock_actuel" class="form-control" value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Seuil d'alerte</label>
+                            <input type="number" name="seuil_alerte" class="form-control" value="10">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow">
+                        <i class="fas fa-save me-2"></i>Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-white { background: #fff; border: 1px solid #dee2e6; }
+    .btn-white:hover { background: #f8f9fa; }
+    .opacity-25 { opacity: 0.25; }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+    .bg-opacity-10 { background-color: rgba(13, 110, 253, 0.1); }
+</style>
+{% endblock %}

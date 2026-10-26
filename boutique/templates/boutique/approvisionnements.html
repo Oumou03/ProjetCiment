@@ -1,0 +1,202 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="fas fa-truck-moving me-2 text-primary"></i>Logistique & Arrivages
+            </h3>
+            <p class="text-muted small">Gestion des entrées en stock et historique fournisseurs</p>
+        </div>
+        <button type="button" class="btn btn-primary shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#approModal">
+            <i class="fas fa-plus-circle me-2"></i>Nouvel Arrivage
+        </button>
+    </div>
+
+    <!-- Affichage des stocks actuels (toujours positif) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light border-0 rounded-4 shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-boxes me-2 text-primary"></i>Stocks actuels</h6>
+                    <div class="row g-2">
+                        {% for produit in form.fields.produit.queryset %}
+                        <div class="col-md-3 col-sm-6">
+                            <div class="d-flex align-items-center p-2 bg-white rounded-3">
+                                <span class="fw-bold text-dark me-2">{{ produit.nom }}:</span>
+                                <span class="badge {% if produit.stock_actuel <= 0 %}bg-danger{% elif produit.stock_actuel <= produit.seuil_alerte %}bg-warning text-dark{% else %}bg-success{% endif %} rounded-pill px-3">
+                                    {% if produit.stock_actuel < 0 %}
+                                        0 sacs
+                                    {% else %}
+                                        {{ produit.stock_actuel|floatformat:0 }} sacs
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <p class="text-muted mb-0">Aucun produit enregistré.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3 border-0">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-history text-primary me-2"></i>
+                <h6 class="fw-bold mb-0">Historique des arrivages</h6>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Produit</th>
+                            <th>Fournisseur</th>
+                            <th>Quantité</th>
+                            <th>Prix d'Achat</th>
+                            <th>Stock actuel</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        {% for a in approvisionnements %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="far fa-calendar-alt me-2 text-primary"></i>
+                                    <div>
+                                        <span class="d-block fw-bold text-dark">{{ a.date_entree|date:"d M Y" }}</span>
+                                        <small class="text-muted">{{ a.date_entree|date:"H:i" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark">{{ a.produit.nom }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info bg-opacity-10 text-info rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user-tie small"></i>
+                                    </div>
+                                    <span>{{ a.fournisseur.nom|default:"N/A" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-success border border-success border-opacity-25 rounded-pill px-3 py-2">
+                                    <i class="fas fa-plus-circle me-1"></i> +{{ a.quantite_sacs }} sacs
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-success">{{ a.prix_achat_unitaire }}</span> 
+                                <small class="text-muted">GNF/sac</small>
+                            </td>
+                            <td>
+                                {% with stock=a.produit.stock_actuel %}
+                                    <span class="badge {% if stock <= 0 %}bg-danger{% elif stock <= a.produit.seuil_alerte %}bg-warning text-dark{% else %}bg-success{% endif %} rounded-pill px-3">
+                                        {% if stock < 0 %}
+                                            0 sacs
+                                        {% else %}
+                                            {{ stock|floatformat:0 }} sacs
+                                        {% endif %}
+                                    </span>
+                                {% endwith %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group shadow-sm">
+                                    <a href="{% url 'modifier_approvisionnement' a.id %}" class="btn btn-sm btn-white border text-warning" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{% url 'supprimer_approvisionnement' a.id %}" method="POST" class="d-inline" 
+                                          onsubmit="return confirm('⚠️ Supprimer cet arrivage de {{ a.quantite_sacs }} sacs ?\nStock actuel: {{ a.produit.stock_actuel }} sacs');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-white border border-start-0 text-danger" title="Supprimer">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="opacity-25 mb-3">
+                                    <i class="fas fa-clipboard-list fa-4x text-muted"></i>
+                                </div>
+                                <p class="text-muted fw-bold">Aucun arrivage enregistré</p>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#approModal">
+                                    <i class="fas fa-plus-circle me-2"></i>Premier arrivage
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'ajout d'arrivage -->
+<div class="modal fade" id="approModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white p-4 border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="fas fa-truck-loading me-2"></i>Nouvel Arrivage</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'liste_approvisionnements' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <div class="bg-light p-3 rounded-4">
+                            {% for field in form %}
+                                <div class="mb-3">
+                                    <label class="small fw-bold text-muted">{{ field.label }}</label>
+                                    {{ field }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-4 border border-dashed border-2 bg-primary bg-opacity-10 border-primary border-opacity-25">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-user-plus me-2"></i>Nouveau Fournisseur
+                        </h6>
+                        <input type="text" name="nouveau_fourn_nom" class="form-control mb-2" placeholder="Nom">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="text" name="nouveau_fourn_tel" class="form-control" placeholder="Téléphone">
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="nouveau_fourn_adr" class="form-control" placeholder="Adresse">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow">
+                        <i class="fas fa-check-circle me-2"></i>Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-white { background: #fff; border: 1px solid #dee2e6; }
+    .btn-white:hover { background: #f8f9fa; }
+    .opacity-25 { opacity: 0.25; }
+    .border-dashed { border-style: dashed !important; }
+    .bg-opacity-10 { background-color: rgba(13, 110, 253, 0.1) !important; }
+    .table-hover tbody tr:hover { background-color: rgba(13, 110, 253, 0.02) !important; }
+</style>
+{% endblock %}

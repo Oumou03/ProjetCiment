@@ -1,0 +1,267 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary">
+            <i class="fas fa-users me-2"></i> Répertoire des Clients
+        </h2>
+        <button type="button" class="btn btn-primary shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#addClientModal">
+            <i class="fas fa-plus-circle me-2"></i>Nouveau Client
+        </button>
+    </div>
+
+    <!-- Statistiques rapides -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total clients</h6>
+                    <h2 class="mb-0">{{ clients|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total créances</h6>
+                    <h2 class="mb-0">
+                        {% with total=0 %}
+                            {% for c in clients %}
+                                {% if c.solde < 0 %}
+                                    {% with total=total|add:c.solde_positif %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %} GNF
+                    </h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total avances</h6>
+                    <h2 class="mb-0">
+                        {% with total=0 %}
+                            {% for c in clients %}
+                                {% if c.solde > 0 %}
+                                    {% with total=total|add:c.solde %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %} GNF
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="ps-4">Client</th>
+                            <th>Téléphone</th>
+                            <th>Adresse</th>
+                            <th class="text-center">Solde</th>
+                            <th class="text-center">Statut</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in clients %}
+                        <tr>
+                            <td class="ps-4">
+                                <a href="{% url 'details_client' c.id %}" class="text-decoration-none">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-user text-primary"></i>
+                                        </div>
+                                        <span class="fw-bold text-dark">{{ c.nom }}</span>
+                                    </div>
+                                </a>
+                            </td>
+                            <td>
+                                {% if c.telephone %}
+                                    <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                                        <i class="fas fa-phone me-1"></i>{{ c.telephone }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if c.adresse %}
+                                    <span class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>{{ c.adresse }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center fw-bold {% if c.solde < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ c.solde_positif }} GNF
+                            </td>
+                            <td class="text-center">
+                                {% if c.solde < 0 %}
+                                    <span class="badge bg-danger rounded-pill px-3 py-2">Dette</span>
+                                {% elif c.solde > 0 %}
+                                    <span class="badge bg-success rounded-pill px-3 py-2">Avance</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill px-3 py-2">Solde nul</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group shadow-sm">
+                                    <a href="{% url 'details_client' c.id %}" class="btn btn-sm btn-outline-info" title="Voir détails">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-warning" 
+                                            onclick="ouvrirModifierClient('{{ c.id }}', '{{ c.nom }}', '{{ c.telephone }}', '{{ c.adresse }}')"
+                                            title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form action="{% url 'supprimer_client' c.id %}" method="POST" style="display:inline;" 
+                                          onsubmit="return confirm('⚠️ Supprimer ce client ? Toutes ses commandes et paiements seront également supprimés.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-4x mb-3 opacity-25"></i>
+                                    <h5>Aucun client enregistré</h5>
+                                    <p class="small">Commencez par ajouter votre premier client.</p>
+                                    <button class="btn btn-primary btn-sm rounded-pill px-4 mt-2" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                                        <i class="fas fa-plus-circle me-2"></i>Ajouter un client
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if clients %}
+        <div class="card-footer bg-white border-0 py-3 text-muted small">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-chart-line me-2"></i>{{ clients|length }} client(s) actif(s)</span>
+                <span>
+                    <i class="fas fa-balance-scale me-2"></i>
+                    Balance: 
+                    {% with total=0 %}
+                        {% for c in clients %}
+                            {{ total|add:c.solde }}
+                        {% endfor %}
+                    {% endwith %} GNF
+                </span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Ajout/Modification Client -->
+<div class="modal fade" id="addClientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white p-4 border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="modalTitle">
+                    <i class="fas fa-user-plus me-2"></i>Nouveau Client
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'liste_clients' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <input type="hidden" name="client_id" id="client_id">
+                    <div class="bg-light p-3 rounded-4">
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Nom complet</label>
+                            <input type="text" name="nom" id="id_nom" class="form-control" required placeholder="Ex: Mamadou Diallo">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Téléphone</label>
+                            <input type="text" name="telephone" id="id_telephone" class="form-control" placeholder="Ex: 622 00 00 00">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Adresse</label>
+                            <textarea name="adresse" id="id_adresse" class="form-control" rows="2" placeholder="Ex: Dixinn, Cité Cheick"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" name="btn_ajouter" id="btnAjouter" class="btn btn-primary rounded-pill px-4 shadow">
+                        <i class="fas fa-save me-2"></i>Enregistrer
+                    </button>
+                    <button type="submit" name="btn_modifier" id="btnModifier" class="btn btn-warning rounded-pill px-4 shadow" style="display:none;">
+                        <i class="fas fa-edit me-2"></i>Mettre à jour
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .opacity-25 { opacity: 0.25; }
+    .bg-opacity-10 { background-color: rgba(13, 110, 253, 0.1); }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+    .btn-group .btn {
+        border-radius: 0;
+    }
+    .btn-group .btn:first-child {
+        border-top-left-radius: 20px;
+        border-bottom-left-radius: 20px;
+    }
+    .btn-group .btn:last-child {
+        border-top-right-radius: 20px;
+        border-bottom-right-radius: 20px;
+    }
+    .text-white-50 { color: rgba(255,255,255,0.8); }
+</style>
+
+<script>
+function ouvrirModifierClient(id, nom, tel, adr) {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Modifier le Client';
+    document.getElementById('client_id').value = id;
+    
+    document.getElementById('id_nom').value = nom;
+    document.getElementById('id_telephone').value = tel;
+    document.getElementById('id_adresse').value = adr;
+    
+    document.getElementById('btnAjouter').style.display = 'none';
+    document.getElementById('btnModifier').style.display = 'block';
+    
+    var myModal = new bootstrap.Modal(document.getElementById('addClientModal'));
+    myModal.show();
+}
+
+function reinitialiserForm() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus me-2"></i>Nouveau Client';
+    document.getElementById('client_id').value = "";
+    document.getElementById('id_nom').value = "";
+    document.getElementById('id_telephone').value = "";
+    document.getElementById('id_adresse').value = "";
+    
+    document.getElementById('btnAjouter').style.display = 'block';
+    document.getElementById('btnModifier').style.display = 'none';
+}
+
+// Réinitialiser le formulaire quand le modal est fermé
+document.getElementById('addClientModal').addEventListener('hidden.bs.modal', function () {
+    reinitialiserForm();
+});
+</script>
+{% endblock %}

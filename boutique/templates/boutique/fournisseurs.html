@@ -1,0 +1,255 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark">
+            <i class="fas fa-user-tie me-2 text-primary"></i> Répertoire Fournisseurs
+        </h2>
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addFournModal" onclick="reinitialiserForm()">
+            <i class="fas fa-plus"></i> Nouveau Fournisseur
+        </button>
+    </div>
+
+    <!-- Cartes de statistiques globales -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total fournisseurs</h6>
+                    <h2 class="mb-0">{{ fournisseurs|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total sacs fournis</h6>
+                    <h2 class="mb-0">
+                        {% with total=0 %}
+                            {% for stat in stats %}
+                                {{ total|add:stat.total_sacs }}
+                            {% endfor %}
+                        {% endwith %} sacs
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="ps-4">Fournisseur</th>
+                            <th>Téléphone</th>
+                            <th>Adresse</th>
+                            <th class="text-center">Total sacs</th>
+                            <th class="text-center">Produits</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in fournisseurs %}
+                        <tr>
+                            <td class="ps-4">
+                                <a href="{% url 'details_fournisseur' f.id %}" class="text-decoration-none">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-user-tie text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold text-dark">{{ f.nom }}</span>
+                                            {% for stat in stats %}
+                                                {% if stat.fournisseur.id == f.id and stat.total_sacs > 0 %}
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-box me-1"></i>{{ stat.nb_produits }} produit(s)
+                                                    </small>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                                    <i class="fas fa-phone me-1"></i>{{ f.telephone|default:"-" }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if f.adresse %}
+                                    <span class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>{{ f.adresse }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% for stat in stats %}
+                                    {% if stat.fournisseur.id == f.id %}
+                                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                                            <i class="fas fa-boxes me-1"></i>{{ stat.total_sacs }} sacs
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="text-center">
+                                {% for stat in stats %}
+                                    {% if stat.fournisseur.id == f.id %}
+                                        <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2">
+                                            {{ stat.nb_produits }}
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group shadow-sm">
+                                    <a href="{% url 'details_fournisseur' f.id %}" class="btn btn-sm btn-outline-info" title="Voir détails">
+                                        <i class="fas fa-chart-line"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-warning" 
+                                            onclick="ouvrirModifierFournisseur('{{ f.id }}', '{{ f.nom }}', '{{ f.telephone }}', '{{ f.adresse }}')"
+                                            title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form action="{% url 'supprimer_fournisseur' f.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce fournisseur ? Cette action supprimera aussi tous ses approvisionnements.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-user-tie fa-4x mb-3 opacity-25"></i>
+                                    <h5>Aucun fournisseur enregistré</h5>
+                                    <p class="small">Commencez par ajouter votre premier fournisseur.</p>
+                                    <button class="btn btn-primary btn-sm rounded-pill px-4 mt-2" data-bs-toggle="modal" data-bs-target="#addFournModal">
+                                        <i class="fas fa-plus-circle me-2"></i>Ajouter un fournisseur
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if fournisseurs %}
+        <div class="card-footer bg-white border-0 py-3 text-muted small">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-chart-line me-2"></i>{{ fournisseurs|length }} fournisseur(s) actif(s)</span>
+                <span>
+                    <i class="fas fa-truck me-2"></i>
+                    Total livraisons: 
+                    {% with total=0 %}
+                        {% for stat in stats %}
+                            {% with total=total|add:stat.total_sacs %}{% endwith %}
+                        {% endfor %}
+                    {% endwith %} sacs
+                </span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Ajout/Modification Fournisseur -->
+<div class="modal fade" id="addFournModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white p-4 border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="modalTitle">
+                    <i class="fas fa-user-plus me-2"></i>Nouveau Fournisseur
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'liste_fournisseurs' %}"> 
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <input type="hidden" name="fournisseur_id" id="fournisseur_id">
+                    <div class="bg-light p-3 rounded-4">
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Nom de l'entreprise</label>
+                            <input type="text" name="nom" id="id_nom" class="form-control" required placeholder="Ex: CIMAF Guinée">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Téléphone</label>
+                            <input type="text" name="telephone" id="id_telephone" class="form-control" placeholder="Ex: 622 00 00 00">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Adresse</label>
+                            <textarea name="adresse" id="id_adresse" class="form-control" rows="2" placeholder="Ex: Kagbélén, Sonfonia"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" name="btn_ajouter" id="btnAjouter" class="btn btn-primary rounded-pill px-4 shadow">
+                        <i class="fas fa-save me-2"></i>Enregistrer
+                    </button>
+                    <button type="submit" name="btn_modifier" id="btnModifier" class="btn btn-warning rounded-pill px-4 shadow" style="display:none;">
+                        <i class="fas fa-edit me-2"></i>Mettre à jour
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .opacity-25 { opacity: 0.25; }
+    .bg-opacity-10 { background-color: rgba(13, 110, 253, 0.1); }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+    .btn-group .btn {
+        border-radius: 0;
+    }
+    .btn-group .btn:first-child {
+        border-top-left-radius: 20px;
+        border-bottom-left-radius: 20px;
+    }
+    .btn-group .btn:last-child {
+        border-top-right-radius: 20px;
+        border-bottom-right-radius: 20px;
+    }
+    .text-white-50 { color: rgba(255,255,255,0.8); }
+</style>
+
+<script>
+function ouvrirModifierFournisseur(id, nom, tel, adr) {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Modifier le Fournisseur';
+    document.getElementById('fournisseur_id').value = id;
+    
+    document.getElementById('id_nom').value = nom;
+    document.getElementById('id_telephone').value = tel;
+    document.getElementById('id_adresse').value = adr;
+    
+    document.getElementById('btnAjouter').style.display = 'none';
+    document.getElementById('btnModifier').style.display = 'block';
+    
+    var myModal = new bootstrap.Modal(document.getElementById('addFournModal'));
+    myModal.show();
+}
+
+function reinitialiserForm() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus me-2"></i>Nouveau Fournisseur';
+    document.getElementById('fournisseur_id').value = "";
+    document.getElementById('id_nom').value = "";
+    document.getElementById('id_telephone').value = "";
+    document.getElementById('id_adresse').value = "";
+    
+    document.getElementById('btnAjouter').style.display = 'block';
+    document.getElementById('btnModifier').style.display = 'none';
+}
+</script>
+{% endblock %}

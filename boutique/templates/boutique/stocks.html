@@ -1,0 +1,338 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary fw-bold">
+                <i class="fas fa-warehouse me-2"></i> État des Stocks
+            </h2>
+            <p class="text-muted small">Visualisez l'état de votre inventaire en temps réel</p>
+        </div>
+        <span class="badge bg-info text-dark p-3 rounded-pill shadow-sm">
+            <i class="fas fa-boxes me-2"></i>Total: {{ produits|length }} produit(s)
+        </span>
+    </div>
+    
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-white py-3 rounded-top-4 border-0">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-list me-2 text-primary"></i>
+                        Inventaire détaillé
+                    </h5>
+                </div>
+                <div class="col-md-4">
+                    <!-- Barre de recherche améliorée -->
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0 rounded-start-pill">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" id="searchInput" class="form-control border-0 bg-light" 
+                               placeholder="Rechercher un produit..." 
+                               style="box-shadow: none;">
+                        <button class="btn btn-primary rounded-end-pill" type="button" id="searchButton">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="filtrerStatut('all')">
+                            Tous
+                        </button>
+                        <button class="btn btn-outline-success btn-sm rounded-pill" onclick="filtrerStatut('ok')">
+                            OK
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm rounded-pill" onclick="filtrerStatut('faible')">
+                            Faible
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="filtrerStatut('rupture')">
+                            Rupture
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <small class="text-muted" id="resultCount">Affichage de {{ produits|length }} produit(s)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="stockTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Produit</th>
+                            <th class="text-center">Stock Actuel</th>
+                            <th class="text-center">Seuil d'Alerte</th>
+                            <th class="text-center">Statut</th>
+                            <th class="text-center">Valeur du Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in produits %}
+                        <tr data-statut="
+                            {% if p.stock_actuel <= 0 %}rupture
+                            {% elif p.stock_actuel <= p.seuil_alerte %}faible
+                            {% else %}ok
+                            {% endif %}">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-box text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-bold text-dark product-name">{{ p.nom }}</span>
+                                        <br>
+                                        <small class="text-muted">PA: {{ p.prix_achat|floatformat:0 }} GNF | PV: {{ p.prix_vente|floatformat:0 }} GNF</small>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td class="text-center fw-bold">
+                                <span class="fs-5 {% if p.stock_actuel <= 0 %}text-danger{% elif p.stock_actuel <= p.seuil_alerte %}text-warning{% else %}text-success{% endif %}">
+                                    {% if p.stock_actuel < 0 %}
+                                        0 sacs
+                                    {% else %}
+                                        {{ p.stock_actuel|floatformat:0 }} sacs
+                                    {% endif %}
+                                </span>
+                                
+                                {% if p.stock_actuel <= 0 %}
+                                    <span class="badge bg-danger ms-2">Rupture</span>
+                                {% elif p.stock_actuel <= p.seuil_alerte %}
+                                    <span class="badge bg-warning text-dark ms-2">Stock faible</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark p-2">
+                                    {{ p.seuil_alerte|floatformat:0 }} sacs
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+                                {% if p.stock_actuel <= 0 %}
+                                    <span class="badge bg-danger p-2">
+                                        <i class="fas fa-exclamation-circle me-1"></i>RUPTURE
+                                    </span>
+                                {% elif p.stock_actuel <= p.seuil_alerte %}
+                                    <span class="badge bg-warning text-dark p-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>STOCK FAIBLE
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success p-2">
+                                        <i class="fas fa-check-circle me-1"></i>OK
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-center fw-bold">
+                                {% if p.stock_actuel > 0 %}
+                                    <span class="text-primary">
+                                        {% widthratio p.stock_actuel 1 p.prix_vente %} GNF
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">- GNF</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-box-open fa-4x mb-3 opacity-25"></i>
+                                    <h5>Aucun produit en stock</h5>
+                                    <p class="small">Commencez par ajouter des produits ou faire un arrivage.</p>
+                                    <a href="{% url 'liste_produits' %}" class="btn btn-primary btn-sm rounded-pill px-4 mt-2">
+                                        <i class="fas fa-plus-circle me-2"></i>Ajouter un produit
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% if produits %}
+        <div class="card-footer bg-white border-0 py-3 text-muted small rounded-bottom-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Stock total: 
+                    <span class="fw-bold text-dark">
+                        {% with total=0 %}
+                            {% for p in produits %}
+                                {% if p.stock_actuel > 0 %}
+                                    {{ total|add:p.stock_actuel }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %} sacs
+                    </span>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-coins me-2 text-success"></i>
+                    Valeur totale: 
+                    <span class="fw-bold text-success">
+                        {% with total=0 %}
+                            {% for p in produits %}
+                                {% if p.stock_actuel > 0 %}
+                                    {% widthratio p.stock_actuel 1 p.prix_vente as valeur %}
+                                    {{ total|add:valeur }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %} GNF
+                    </span>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-success me-1">🟢 OK: 
+                        {% with count=0 %}
+                            {% for p in produits %}
+                                {% if p.stock_actuel > p.seuil_alerte %}
+                                    {{ count|add:"1" }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </span>
+                    <span class="badge bg-warning text-dark me-1">🟡 Faible: 
+                        {% with count=0 %}
+                            {% for p in produits %}
+                                {% if p.stock_actuel > 0 and p.stock_actuel <= p.seuil_alerte %}
+                                    {{ count|add:"1" }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </span>
+                    <span class="badge bg-danger">🔴 Rupture: 
+                        {% with count=0 %}
+                            {% for p in produits %}
+                                {% if p.stock_actuel <= 0 %}
+                                    {{ count|add:"1" }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .opacity-25 { opacity: 0.25; }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+    .bg-opacity-10 { background-color: rgba(13, 110, 253, 0.1); }
+    
+    /* Animation de recherche */
+    .highlight {
+        animation: highlightFade 2s ease;
+    }
+    
+    @keyframes highlightFade {
+        0% { background-color: rgba(255, 193, 7, 0.3); }
+        100% { background-color: transparent; }
+    }
+    
+    /* Style de la barre de recherche */
+    .input-group .form-control:focus {
+        background-color: #fff;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn-group .btn {
+        border: 1px solid #dee2e6;
+    }
+    
+    .btn-group .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+</style>
+
+<script>
+// Fonction de recherche améliorée
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const rows = document.querySelectorAll('#stockTable tbody tr');
+    const resultCount = document.getElementById('resultCount');
+    
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const productName = row.querySelector('.product-name').textContent.toLowerCase();
+            const matches = productName.includes(searchTerm);
+            
+            // Vérifier aussi le filtre de statut
+            const statutFilter = document.querySelector('.btn-group .btn.active')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || 'all';
+            const rowStatut = row.getAttribute('data-statut');
+            
+            const statutMatch = statutFilter === 'all' || rowStatut === statutFilter;
+            
+            if (matches && statutMatch) {
+                row.style.display = '';
+                visibleCount++;
+                
+                // Highlight si recherche active
+                if (searchTerm.length > 0) {
+                    row.classList.add('highlight');
+                    setTimeout(() => row.classList.remove('highlight'), 2000);
+                }
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Mettre à jour le compteur
+        resultCount.textContent = `Affichage de ${visibleCount} produit(s) sur ${rows.length}`;
+    }
+    
+    searchInput.addEventListener('keyup', filterTable);
+    searchButton.addEventListener('click', filterTable);
+    
+    // Filtre par statut
+    window.filtrerStatut = function(statut) {
+        // Mettre à jour l'affichage des boutons
+        document.querySelectorAll('.btn-group .btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        filterTable();
+    };
+    
+    // Compteur initial
+    resultCount.textContent = `Affichage de ${rows.length} produit(s)`;
+});
+
+// Gestion de la touche Entrée
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('searchButton').click();
+    }
+});
+
+// Effacer la recherche
+document.getElementById('searchInput').addEventListener('search', function() {
+    if (this.value === '') {
+        document.querySelectorAll('#stockTable tbody tr').forEach(row => {
+            row.style.display = '';
+        });
+        document.getElementById('resultCount').textContent = `Affichage de ${document.querySelectorAll('#stockTable tbody tr').length} produit(s)`;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,425 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="fas fa-shopping-cart me-2 text-primary"></i>Gestion des Ventes
+            </h3>
+            <p class="text-muted small">Enregistrer les ventes avec différents modes de paiement</p>
+        </div>
+        <button type="button" class="btn btn-primary shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#venteModal">
+            <i class="fas fa-plus-circle me-2"></i>Nouvelle Vente
+        </button>
+    </div>
+
+    <!-- Cartes de résumé avec indicateurs de dettes -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total ventes</h6>
+                    <h3 class="mb-0">{{ ventes|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-dark-50">Créances totales</h6>
+                    <h3 class="mb-0">{{ total_creances|floatformat:0 }} GNF</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Clients avec dette</h6>
+                    <h3 class="mb-0">{{ clients_avec_dette }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Ventes impayées</h6>
+                    <h3 class="mb-0">{{ ventes_impayees }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des ventes -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Client</th>
+                            <th>Produit</th>
+                            <th>Qté</th>
+                            <th>Total</th>
+                            <th>Payé</th>
+                            <th>Reste</th>
+                            <th>Statut</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in ventes %}
+                        <tr class="{% if v.reste_a_payer == 0 %}table-success{% endif %}">
+                            <td class="ps-4">{{ v.date_vente|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="fw-bold">{{ v.client.nom|default:"Client occasionnel" }}</span>
+                                {% if v.client %}
+                                    {% if v.client.solde > 0 %}
+                                        <br><small class="text-success">Avance: {{ v.client.solde|floatformat:0 }} GNF</small>
+                                    {% elif v.client.solde < 0 %}
+                                        <br><small class="text-danger">Dette: {{ v.client.solde_positif|floatformat:0 }} GNF</small>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ v.produit.nom }}</td>
+                            <td class="text-center">{{ v.quantite_sacs }} sacs</td>
+                            <td class="fw-bold">{{ v.prix_total|floatformat:0 }} GNF</td>
+                            <td class="text-success">{{ v.montant_paye|floatformat:0 }} GNF</td>
+                            <td>
+                                {% if v.reste_a_payer > 0 %}
+                                    <span class="badge bg-danger rounded-pill px-3 py-2">
+                                        {{ v.reste_a_payer|floatformat:0 }} GNF
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success rounded-pill px-3 py-2">
+                                        <i class="fas fa-check-circle me-1"></i>Payé
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if v.type_paiement == 'AVANCE' %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-coins me-1"></i>Payé par avance
+                                    </span>
+                                
+                                {% elif v.type_paiement == 'COMPTANT' or v.type_paiement == 'ACOMPTE' and v.reste_a_payer == 0 %}
+                                    {# ✅ Les acomptes soldés deviennent "Payé" #}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Payé
+                                    </span>
+                                
+                                {% elif v.type_paiement == 'DETTE' %}
+                                    {% if v.reste_a_payer == 0 %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Dette remboursée
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-circle me-1"></i>Dette en cours
+                                        </span>
+                                        <br><small class="text-danger">{{ v.reste_a_payer|floatformat:0 }} GNF restants</small>
+                                    {% endif %}
+                                
+                                {% elif v.type_paiement == 'ACOMPTE' %}
+                                    {# Acompte non soldé #}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-hand-holding-usd me-1"></i>Acompte
+                                    </span>
+                                    <br><small class="text-danger">{{ v.reste_a_payer|floatformat:0 }} GNF restants</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <a href="{% url 'modifier_vente' v.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{% url 'supprimer_vente' v.id %}" method="POST" class="d-inline" 
+                                          onsubmit="return confirm('Annuler cette vente ? Cette action rendra les produits au stock.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-shopping-cart fa-4x mb-3 opacity-25"></i>
+                                    <h5>Aucune vente enregistrée</h5>
+                                    <p class="small">Commencez par enregistrer votre première vente.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% if ventes %}
+        <div class="card-footer bg-white border-0 py-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <span class="badge bg-success me-2">🟢</span> Payé / Remboursé
+                        <span class="badge bg-warning ms-3 me-2">🟡</span> Acompte
+                        <span class="badge bg-danger ms-3 me-2">🔴</span> Dette en cours
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="fw-bold text-success">
+                        <i class="fas fa-wallet me-2"></i>
+                        Total encaissé: 
+                        {% with total=0 %}
+                            {% for v in ventes %}
+                                {{ total|add:v.montant_paye }}
+                            {% endfor %}
+                        {% endwith %} GNF
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ========== MODAL NOUVELLE VENTE ========== -->
+<div class="modal fade" id="venteModal" tabindex="-1" aria-labelledby="venteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-primary text-white p-4 border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="venteModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Nouvelle Vente
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form method="POST" action="{% url 'liste_ventes' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <!-- Sélection produit -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Produit <span class="text-danger">*</span></label>
+                            <select name="produit" class="form-select" id="select_produit" required>
+                                <option value="">Choisir un produit...</option>
+                                {% for p in produits %}
+                                <option value="{{ p.id }}" data-prix="{{ p.prix_vente }}" data-stock="{{ p.stock_actuel }}">
+                                    {{ p.nom }} - {{ p.prix_vente|floatformat:0 }} GNF/sac (Stock: {{ p.stock_actuel|floatformat:0 }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Quantité <span class="text-danger">*</span></label>
+                            <input type="number" name="quantite_sacs" class="form-control" id="quantite" min="1" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Total estimé</label>
+                            <input type="text" class="form-control bg-light" id="total_estime" readonly placeholder="0 GNF">
+                        </div>
+                    </div>
+
+                    <!-- Client avec avance -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Client</label>
+                            <select name="client" class="form-select" id="select_client">
+                                <option value="">Client occasionnel</option>
+                                {% for c in clients %}
+                                <option value="{{ c.id }}" data-solde="{{ c.solde }}">
+                                    {{ c.nom }} 
+                                    {% if c.solde > 0 %}
+                                        (💰 Avance: {{ c.solde|floatformat:0 }} GNF)
+                                    {% elif c.solde < 0 %}
+                                        (📝 Dette: {{ c.solde_positif|floatformat:0 }} GNF)
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="info_avance" class="alert mt-2 p-2" style="display: none;">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <span id="message_avance"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Type de paiement -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Type de paiement <span class="text-danger">*</span></label>
+                            <select name="type_paiement" class="form-select" id="type_paiement" required>
+                                <option value="COMPTANT">💰 Paiement comptant</option>
+                                <option value="ACOMPTE">💳 Acompte (paiement partiel)</option>
+                                <option value="DETTE">📝 Dette totale</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Montant payé (pour acompte) -->
+                    <div class="row mb-3" id="montant_paye_div" style="display: none;">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Montant payé aujourd'hui</label>
+                            <div class="input-group">
+                                <input type="number" name="montant_paye" class="form-control" id="montant_paye" min="0" value="0">
+                                <span class="input-group-text">GNF</span>
+                            </div>
+                            <small class="text-muted">Le reste sera ajouté au solde du client</small>
+                        </div>
+                    </div>
+
+                    <!-- Commentaire -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Commentaire (optionnel)</label>
+                        <input type="text" name="commentaire" class="form-control" placeholder="Ex: Paiement Orange Money...">
+                    </div>
+
+                    <!-- Nouveau client -->
+                    <div class="bg-light p-3 rounded-4 mt-3">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-user-plus me-2"></i>Nouveau client ?
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" name="nouveau_client_nom" class="form-control mb-2 mb-md-0" placeholder="Nom complet">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" name="nouveau_client_tel" class="form-control mb-2 mb-md-0" placeholder="Téléphone">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" name="nouveau_client_adr" class="form-control" placeholder="Adresse">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" name="btn_vente" class="btn btn-primary rounded-pill px-4 shadow">
+                        <i class="fas fa-check-circle me-2"></i>Enregistrer la vente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Attendre que le DOM soit chargé
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page chargée - Initialisation du modal');
+    
+    // Vérifier que Bootstrap est disponible
+    if (typeof bootstrap !== 'undefined') {
+        console.log('✅ Bootstrap chargé');
+    } else {
+        console.error('❌ Bootstrap non chargé');
+    }
+
+    // Réinitialiser le formulaire quand le modal est fermé
+    const modalElement = document.getElementById('venteModal');
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('select_produit').value = '';
+            document.getElementById('quantite').value = '';
+            document.getElementById('total_estime').value = '0 GNF';
+            document.getElementById('select_client').value = '';
+            document.getElementById('type_paiement').value = 'COMPTANT';
+            document.getElementById('montant_paye').value = '0';
+            document.getElementById('montant_paye_div').style.display = 'none';
+            document.getElementById('info_avance').style.display = 'none';
+            
+            // Réinitialiser les champs nouveau client
+            document.querySelectorAll('input[name="nouveau_client_nom"], input[name="nouveau_client_tel"], input[name="nouveau_client_adr"]').forEach(input => {
+                input.value = '';
+            });
+        });
+    }
+});
+
+// Calcul automatique du total
+document.getElementById('select_produit').addEventListener('change', calculerTotal);
+document.getElementById('quantite').addEventListener('input', calculerTotal);
+
+function calculerTotal() {
+    const select = document.getElementById('select_produit');
+    const quantite = document.getElementById('quantite').value;
+    
+    if (select.selectedIndex > 0 && quantite) {
+        const prix = select.options[select.selectedIndex].dataset.prix;
+        const total = parseInt(prix) * parseInt(quantite);
+        document.getElementById('total_estime').value = total.toLocaleString() + ' GNF';
+    } else {
+        document.getElementById('total_estime').value = '0 GNF';
+    }
+}
+
+// Afficher/masquer le champ montant payé selon le type
+document.getElementById('type_paiement').addEventListener('change', function() {
+    const divMontant = document.getElementById('montant_paye_div');
+    if (this.value === 'ACOMPTE') {
+        divMontant.style.display = 'block';
+    } else {
+        divMontant.style.display = 'none';
+        document.getElementById('montant_paye').value = '0';
+    }
+});
+
+// Afficher l'avance du client sélectionné
+document.getElementById('select_client').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const solde = selected.dataset.solde;
+    const infoDiv = document.getElementById('info_avance');
+    const messageSpan = document.getElementById('message_avance');
+    
+    if (solde > 0) {
+        infoDiv.style.display = 'block';
+        messageSpan.innerHTML = `💰 Ce client a une avance de ${parseInt(solde).toLocaleString()} GNF. Elle sera utilisée automatiquement.`;
+        infoDiv.className = 'alert alert-info mt-2 p-2';
+    } else if (solde < 0) {
+        infoDiv.style.display = 'block';
+        messageSpan.innerHTML = `⚠️ Ce client a une dette de ${Math.abs(parseInt(solde)).toLocaleString()} GNF.`;
+        infoDiv.className = 'alert alert-warning mt-2 p-2';
+    } else {
+        infoDiv.style.display = 'none';
+    }
+});
+
+// Vérification manuelle du bouton
+document.querySelector('[data-bs-target="#venteModal"]').addEventListener('click', function() {
+    console.log('✅ Bouton Nouvelle Vente cliqué');
+});
+</script>
+
+<style>
+    .text-white-50 { color: rgba(255,255,255,0.8); }
+    .text-dark-50 { color: rgba(0,0,0,0.7); }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+    .opacity-25 { opacity: 0.25; }
+    .table-success {
+        background-color: rgba(25, 135, 84, 0.05) !important;
+    }
+    .modal-lg {
+        max-width: 800px;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .btn-close-white {
+        filter: brightness(0) invert(1);
+    }
+    
+    /* Animation pour les lignes soldées */
+    .table-success {
+        transition: background-color 0.3s ease;
+    }
+</style>
+{% endblock %}

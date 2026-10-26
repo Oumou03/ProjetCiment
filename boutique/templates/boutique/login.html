@@ -1,0 +1,100 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <!-- En-tête avec dégradé -->
+                <div class="card-header bg-primary text-white p-4 border-0 text-center">
+                    <i class="fas fa-cubes fa-3x mb-3"></i>
+                    <h3 class="fw-bold">CimentGestion Pro</h3>
+                    <p class="mb-0 opacity-75">Connectez-vous à votre espace</p>
+                </div>
+
+                <!-- Corps du formulaire -->
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-user me-2"></i>Nom d'utilisateur
+                            </label>
+                            <input type="text" name="username" class="form-control form-control-lg" 
+                                   placeholder="Entrez votre nom d'utilisateur" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-lock me-2"></i>Mot de passe
+                            </label>
+                            <input type="password" name="password" class="form-control form-control-lg" 
+                                   placeholder="Entrez votre mot de passe" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 py-3 mb-3 rounded-pill">
+                            <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+                        </button>
+
+                        <div class="text-center text-muted small">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Espace sécurisé - Accès réservé au personnel
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Pied de page -->
+                <div class="card-footer bg-light p-3 text-center border-0">
+                    <p class="mb-0 small text-muted">
+                        &copy; 2024 CimentGestion Pro - Tous droits réservés
+                    </p>
+                </div>
+            </div>
+
+            <!-- Message de démo -->
+            <div class="alert alert-info mt-4 text-center rounded-pill">
+                <i class="fas fa-info-circle me-2"></i>
+                Démo : utilisateur <strong>admin</strong> / mot de passe <strong>admin123</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .min-vh-100 {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .form-control-lg {
+        border-radius: 15px;
+        border: 2px solid #e2e8f0;
+        padding: 12px 20px;
+    }
+    
+    .form-control-lg:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+</style>
+{% endblock %}

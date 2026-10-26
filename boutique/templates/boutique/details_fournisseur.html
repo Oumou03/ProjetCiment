@@ -1,0 +1,135 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="fas fa-user-tie me-2 text-primary"></i>
+                {{ fournisseur.nom }}
+            </h3>
+            <p class="text-muted small">
+                <i class="fas fa-phone me-2"></i>{{ fournisseur.telephone|default:"Téléphone non renseigné" }} |
+                <i class="fas fa-map-marker-alt me-2"></i>{{ fournisseur.adresse|default:"Adresse non renseignée" }}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'liste_fournisseurs' %}" class="btn btn-outline-secondary rounded-pill me-2">
+                <i class="fas fa-arrow-left me-2"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Total sacs fournis</h6>
+                    <h2 class="mb-0">{{ total_sacs }} sacs</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Montant total</h6>
+                    <h2 class="mb-0">{{ montant_total }} GNF</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-white-50">Produits différents</h6>
+                    <h2 class="mb-0">{{ produits_distincts }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark border-0 rounded-4 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-dark-50">Dernière livraison</h6>
+                    <h5 class="mb-0">{{ derniere_livraison.date_entree|date:"d/m/Y"|default:"-" }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des livraisons -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white py-3">
+            <h6 class="fw-bold mb-0">
+                <i class="fas fa-history me-2 text-primary"></i>
+                Historique des livraisons
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Produit</th>
+                            <th class="text-center">Quantité</th>
+                            <th class="text-end">Prix unitaire</th>
+                            <th class="text-end">Total</th>
+                            <th>Commentaire</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appro in approvisionnements %}
+                        <tr>
+                            <td class="ps-4">{{ appro.date_entree|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="fw-bold">{{ appro.produit.nom }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-primary rounded-pill px-3">
+                                    {{ appro.quantite_sacs }} sacs
+                                </span>
+                            </td>
+                            <td class="text-end">{{ appro.prix_achat_unitaire }} GNF</td>
+                            <td class="text-end fw-bold text-success">
+                                {% widthratio appro.quantite_sacs 1 appro.prix_achat_unitaire %} GNF
+                            </td>
+                            <td>
+                                {% if appro.commentaire %}
+                                    <span class="badge bg-light text-muted">{{ appro.commentaire }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-box-open fa-4x mb-3 opacity-25"></i>
+                                    <h5>Aucune livraison pour ce fournisseur</h5>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if approvisionnements %}
+        <div class="card-footer bg-white border-0 py-3 text-muted small">
+            <div class="d-flex justify-content-between">
+                <span>Total: {{ approvisionnements|length }} livraison(s)</span>
+                <span class="fw-bold">Total général: {{ montant_total }} GNF</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .opacity-25 { opacity: 0.25; }
+    .text-white-50 { color: rgba(255,255,255,0.8); }
+    .text-dark-50 { color: rgba(0,0,0,0.7); }
+</style>
+{% endblock %}

@@ -1,0 +1,520 @@
+{% extends 'boutique/base.html' %}
+
+{% block content %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.9);
+        --grad-blue: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        --grad-green: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        --grad-red: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        --grad-purple: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+        --grad-orange: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    }
+
+    .stat-card {
+        border-radius: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: rotate(45deg);
+        transition: all 0.6s ease;
+        opacity: 0;
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+        transform: rotate(45deg) translate(10%, 10%);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 30px rgba(0,0,0,0.2);
+    }
+
+    .table-container {
+        border-radius: 20px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .badge-status {
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.3px;
+        display: inline-block;
+    }
+
+    .product-card {
+        background: white;
+        border-radius: 16px;
+        padding: 15px;
+        transition: all 0.3s ease;
+        border: 1px solid #f1f5f9;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border-color: #3b82f6;
+    }
+
+    tr { 
+        animation: fadeIn 0.5s ease forwards; 
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .progress-bar-container {
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+
+    .welcome-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 30px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+    }
+
+    .quick-action-btn {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        border-radius: 15px;
+        padding: 12px 20px;
+        transition: all 0.3s ease;
+    }
+
+    .quick-action-btn:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateY(-2px);
+        color: white;
+    }
+</style>
+
+<div class="container-fluid px-4 py-3">
+    <!-- Section de bienvenue dynamique -->
+    <!-- Section de bienvenue dynamique - MODIFIÉE SANS "BONJOUR" -->
+<div class="welcome-section mb-5">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold mb-3">
+                📊 Tableau de Bord
+            </h1>
+            <p class="mb-4 opacity-75">
+                <i class="far fa-calendar-alt me-2"></i>{{ "now"|date:"l d F Y" }} | 
+                <i class="far fa-clock me-2"></i>{{ "now"|date:"H:i" }}
+            </p>
+            <div class="d-flex gap-3">
+                <a href="{% url 'liste_ventes' %}" class="quick-action-btn">
+                    <i class="fas fa-plus-circle me-2"></i>Nouvelle Vente
+                </a>
+                <a href="{% url 'liste_approvisionnements' %}" class="quick-action-btn">
+                    <i class="fas fa-truck me-2"></i>Approvisionnement
+                </a>
+                <a href="{% url 'liste_clients' %}" class="quick-action-btn">
+                    <i class="fas fa-user-plus me-2"></i>Nouveau Client
+                </a>
+            </div>
+        </div>
+       
+    </div>
+</div>
+
+    <!-- Statistiques principales -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card stat-card border-0 text-white" style="background: var(--grad-blue);">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-white-50 small mb-1">Chiffre d'Affaires</p>
+                            <h2 class="fw-bold mb-0">{{ ca_total|default:"0" }} <small class="fs-6">GNF</small></h2>
+                            <small class="text-white-50">Total des ventes</small>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-wallet fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card border-0 text-white" style="background: var(--grad-green);">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-white-50 small mb-1">Stock Total</p>
+                            <h2 class="fw-bold mb-0">{{ total_sacs|stringformat:"d"|cut:"-"|default:"0" }} <small class="fs-6">sacs</small></h2>
+                            <small class="text-white-50">{{ produits.count }} produit(s)</small>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-warehouse fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card border-0 text-white" style="background: var(--grad-red);">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-white-50 small mb-1">Alertes Stock</p>
+                            <h2 class="fw-bold mb-0">{{ alertes.count|default:"0" }} <small class="fs-6">critiques</small></h2>
+                            <small class="text-white-50">Stock bas ou nul</small>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card border-0 text-white" style="background: var(--grad-purple);">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-white-50 small mb-1">Clients Actifs</p>
+                            <h2 class="fw-bold mb-0">{{ clients_count|default:"0" }} <small class="fs-6">personnes</small></h2>
+                            <small class="text-white-50">{{ clients_avec_dette|default:"0" }} avec dette</small>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deuxième ligne de statistiques -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Dettes Clients</h6>
+                        <span class="badge bg-warning text-dark">{{ total_creances|default:"0" }} GNF</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill bg-warning" style="width: {{ pourcentage_dettes|default:"0" }}%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">{{ clients_avec_dette|default:"0" }} client(s) concerné(s)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Avances Clients</h6>
+                        <span class="badge bg-success">{{ total_avances|default:"0" }} GNF</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill bg-success" style="width: {{ pourcentage_avances|default:"0" }}%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">{{ clients_avec_avance|default:"0" }} client(s) avec avance</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Ventes du mois</h6>
+                        <span class="badge bg-info">{{ ventes_mois|default:"0" }} ventes</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill bg-info" style="width: {{ pourcentage_ventes|default:"0" }}%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Moyenne: {{ moyenne_ventes|default:"0" }} GNF/jour</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section ventes récentes et alertes -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card table-container border-0">
+                <div class="card-header bg-transparent border-0 py-4 px-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-history me-2 text-primary"></i>
+                        Dernières Ventes
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="text-muted small">
+                            <tr>
+                                <th>Date</th>
+                                <th>Client</th>
+                                <th>Produit</th>
+                                <th class="text-end">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in ventes_recentes %}
+                            <tr>
+                                <td>{{ v.date_vente|date:"d/m/Y H:i" }}</td>
+                                <td>{{ v.client.nom|default:"Occasionnel"|truncatechars:15 }}</td>
+                                <td>{{ v.produit.nom|truncatechars:10 }}</td>
+                                <td class="text-end fw-bold text-success">{{ v.prix_total }} GNF</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">Aucune vente récente</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-transparent border-0 text-end py-3">
+                    <a href="{% url 'liste_ventes' %}" class="btn btn-sm btn-outline-primary rounded-pill px-4">
+                        Voir toutes les ventes <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card table-container border-0">
+                <div class="card-header bg-transparent border-0 py-4 px-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-exclamation-circle me-2 text-danger"></i>
+                        Alertes Stock
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="text-muted small">
+                            <tr>
+                                <th>Produit</th>
+                                <th>Stock</th>
+                                <th>Seuil</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in alertes %}
+                            <tr>
+                                <td class="fw-bold">{{ p.nom }}</td>
+                                <td>
+                                    <span class="badge bg-danger">{{ p.stock_actuel }} sacs</span>
+                                </td>
+                                <td>{{ p.seuil_alerte }} sacs</td>
+                                <td>
+                                    <a href="{% url 'liste_approvisionnements' %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="fas fa-plus-circle me-1"></i>Approvisionner
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">Aucune alerte en cours</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-transparent border-0 text-end py-3">
+                    <a href="{% url 'liste_stocks' %}" class="btn btn-sm btn-outline-danger rounded-pill px-4">
+                        Gérer les stocks <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventaire détaillé -->
+    <div class="card table-container border-0">
+        <div class="card-header bg-transparent border-0 py-4 px-4">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-boxes me-2 text-primary"></i>
+                        État de l'Inventaire
+                    </h5>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="searchInput" class="form-control border-start-0" placeholder="Rechercher un produit...">
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-primary rounded-pill px-3 py-2">{{ produits.count }} Produits</span>
+                    <span class="badge bg-success rounded-pill px-3 py-2 ms-2">{{ produits_ok }} OK</span>
+                    <span class="badge bg-danger rounded-pill px-3 py-2 ms-2">{{ alertes.count }} Alertes</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="inventoryTable">
+                <thead class="text-muted small text-uppercase bg-light">
+                    <tr>
+                        <th class="ps-4">Produit</th>
+                        <th>Prix Achat</th>
+                        <th>Prix Vente</th>
+                        <th>Stock Actuel</th>
+                        <th>Valeur Stock</th>
+                        <th class="text-center">Statut</th>
+                        <th class="text-center">Progression</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for p in produits %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="p-2 bg-light rounded-3 me-3">
+                                    <i class="fas fa-box text-primary"></i>
+                                </div>
+                                <span class="fw-bold text-dark product-name">{{ p.nom }}</span>
+                            </div>
+                        </td>
+                        <td>{{ p.prix_achat }} GNF</td>
+                        <td class="fw-bold">{{ p.prix_vente }} GNF</td>
+                        <td>
+                            <span class="fw-bold {% if p.stock_actuel <= p.seuil_alerte %}text-danger{% else %}text-success{% endif %}">
+                                {{ p.stock_positif }} sacs
+                            </span>
+                        </td>
+                        <td class="fw-bold text-primary">
+                            {% widthratio p.stock_positif 1 p.prix_vente %} GNF
+                        </td>
+                        <td class="text-center">
+                            {% if p.stock_actuel <= 0 %}
+                                <span class="badge-status bg-danger bg-opacity-10 text-danger">Rupture</span>
+                            {% elif p.stock_actuel <= p.seuil_alerte %}
+                                <span class="badge-status bg-warning bg-opacity-10 text-warning">Critique</span>
+                            {% else %}
+                                <span class="badge-status bg-success bg-opacity-10 text-success">Optimal</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center" style="width: 150px;">
+                            <div class="progress-bar-container">
+                                {% with ratio=p.stock_actuel|divisibleby:p.seuil_alerte %}
+                                <div class="progress-bar-fill {% if p.stock_actuel <= p.seuil_alerte %}bg-warning{% else %}bg-success{% endif %}" 
+                                     style="width: {{ p.stock_actuel|divisibleby:p.seuil_alerte }}%"></div>
+                                {% endwith %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-box-open fa-4x mb-3 opacity-25"></i>
+                                <h5>Aucun produit en stock</h5>
+                                <p class="small">Commencez par ajouter des produits ou faire un arrivage.</p>
+                                <a href="{% url 'liste_produits' %}" class="btn btn-primary btn-sm rounded-pill px-4">
+                                    <i class="fas fa-plus-circle me-2"></i>Ajouter un produit
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if produits %}
+        <div class="card-footer bg-transparent border-0 py-3 px-4 text-muted small">
+            <div class="row">
+                <div class="col-md-6">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Stock total: {{ total_sacs }} sacs
+                </div>
+                <div class="col-md-6 text-end">
+                    <i class="fas fa-coins me-2 text-success"></i>
+                    Valeur totale: 
+                    {% with total=0 %}
+                        {% for p in produits %}
+                            {% widthratio p.stock_positif 1 p.prix_vente as valeur %}
+                            {{ total|add:valeur }}
+                        {% endfor %}
+                    {% endwith %} GNF
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Recherche en temps réel
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#inventoryTable tbody tr');
+        
+        rows.forEach(row => {
+            let nameElement = row.querySelector('.product-name');
+            if (nameElement) {
+                let text = nameElement.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? "" : "none";
+            }
+        });
+    });
+
+    // Animation des chiffres
+    function animateNumbers() {
+        document.querySelectorAll('.stat-card h2').forEach(counter => {
+            const target = parseInt(counter.innerText.replace(/\D/g, ''));
+            if (target > 0) {
+                let current = 0;
+                const increment = target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        clearInterval(timer);
+                        current = target;
+                    }
+                    counter.innerText = Math.floor(current).toLocaleString() + ' ';
+                }, 20);
+            }
+        });
+    }
+
+    // Charger les graphiques
+    document.addEventListener('DOMContentLoaded', function() {
+        animateNumbers();
+    });
+</script>
+
+{% endblock %}

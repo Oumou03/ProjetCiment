@@ -1,0 +1,586 @@
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CimentGestion </title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar moderne */
+        #sidebar {
+            min-width: 280px;
+            max-width: 280px;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1a2634 0%, #0f172a 100%);
+            color: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        #sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #sidebar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Logo / En-tête sidebar */
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h4 {
+            font-weight: 700;
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 0;
+        }
+
+        /* Liens de navigation */
+        #sidebar .nav-link {
+            color: #cbd5e1;
+            padding: 12px 20px;
+            margin: 4px 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #sidebar .nav-link i {
+            width: 24px;
+            font-size: 1.2rem;
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+
+        #sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            transform: translateX(5px);
+        }
+
+        #sidebar .nav-link:hover i {
+            color: #60a5fa;
+        }
+
+        #sidebar .nav-link.active {
+            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+        }
+
+        #sidebar .nav-link.active i {
+            color: white;
+        }
+
+        /* Séparateur */
+        .sidebar-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 15px 20px;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            padding: 25px 30px;
+            background-color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        /* Navbar moderne */
+        .navbar-custom {
+            background: white;
+            border-radius: 20px;
+            padding: 15px 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .navbar-title {
+            font-weight: 700;
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .navbar-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-left: 10px;
+            padding-left: 10px;
+            border-left: 2px solid #e2e8f0;
+        }
+
+        /* Badge date */
+        .date-badge {
+            background: #f1f5f9;
+            padding: 8px 15px;
+            border-radius: 30px;
+            color: #475569;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .date-badge i {
+            color: #3b82f6;
+            margin-right: 8px;
+        }
+
+        /* Messages alerts améliorés */
+        .alert {
+            border: none;
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .alert .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+
+        /* Cards modernes */
+        .card {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 20px 25px;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        /* Boutons modernes */
+        .btn {
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-outline-primary {
+            background: transparent;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        .btn-outline-primary:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Tableaux */
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 15px;
+        }
+
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .badge.bg-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+        }
+
+        .badge.bg-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        }
+
+        .badge.bg-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            color: white !important;
+        }
+
+        .badge.bg-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+        }
+
+        /* Modals */
+        .modal-content {
+            border: none;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 25px;
+            border-radius: 24px 24px 0 0 !important;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e2e8f0;
+            padding: 20px 25px;
+        }
+
+        /* Formulaires */
+        .form-control, .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 15px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .main-content {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #sidebar {
+                min-width: 100%;
+                max-width: 100%;
+                position: fixed;
+                z-index: 1000;
+                left: -100%;
+            }
+            
+            #sidebar.active {
+                left: 0;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+        }
+
+        /* Stats cards */
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            margin-bottom: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Scrollbar personnalisée */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar moderne -->
+        <nav id="sidebar" class="shadow-lg">
+            <div class="sidebar-header">
+                <h4><i class="fas fa-cubes me-2"></i>CimentGestion </h4>
+                <p>Gestion intelligente de stock</p>
+            </div>
+            
+            <div class="sidebar-divider"></div>
+
+            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-chart-line"></i>
+                <span>Tableau de Bord</span>
+            </a>
+            
+            <a href="{% url 'liste_stocks' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_stocks' %}active{% endif %}">
+                <i class="fas fa-warehouse"></i>
+                <span>Gestion des Stocks</span>
+            </a>
+            
+            <a href="{% url 'liste_produits' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_produits' %}active{% endif %}">
+                <i class="fas fa-boxes"></i>
+                <span>Catalogue Produits</span>
+            </a>
+            
+            <a href="{% url 'liste_ventes' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_ventes' %}active{% endif %}">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Ventes</span>
+            </a>
+            
+            <a href="{% url 'liste_clients' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_clients' %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>Clients</span>
+            </a>
+            
+            <a href="{% url 'liste_fournisseurs' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_fournisseurs' %}active{% endif %}">
+                <i class="fas fa-user-tie"></i>
+                <span>Fournisseurs</span>
+            </a>
+            
+            <a href="{% url 'liste_approvisionnements' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_approvisionnements' %}active{% endif %}">
+                <i class="fas fa-truck-moving"></i>
+                <span>Approvisionnements</span>
+            </a>
+
+            <div class="sidebar-divider"></div>
+
+            <!-- Pied de sidebar -->
+            <div class="mt-auto p-3 text-center" style="position: absolute; bottom: 0; width: 100%;">
+                <small class="text-muted">
+                    <i class="far fa-clock me-1"></i>
+                    {% now "d/m/Y H:i" %}
+                </small>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Navbar supérieure -->
+            <nav class="navbar navbar-custom">
+                <div class="container-fluid">
+                    <div class="d-flex align-items-center">
+                        <h5 class="navbar-title">CimentGestion Pro</h5>
+                        <span class="navbar-subtitle">Espace de travail</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <div class="date-badge me-3">
+                            <i class="far fa-calendar-alt"></i>
+                            {% now "l d F Y" %}
+                        </div>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-light rounded-circle p-2" style="width: 40px; height: 40px;" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user text-primary"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Profil</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Paramètres</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenu principal -->
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts personnalisés -->
+    <script>
+        // Gestion de la sidebar sur mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'btn btn-primary d-md-none position-fixed';
+            toggleBtn.style.cssText = 'bottom: 20px; right: 20px; z-index: 1001; border-radius: 50%; width: 50px; height: 50px;';
+            toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+            
+            document.body.appendChild(toggleBtn);
+        });
+    </script>
+</body>
+</html>
